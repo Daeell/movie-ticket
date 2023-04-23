@@ -32,6 +32,26 @@ class MovieSerializer(serializers.ModelSerializer):
             Cast.objects.create(movie=movie, **cast_item)
         
         return movie
+    
+    def update(self, instance, validated_data):
+        for field in self.Meta.fields:
+            if field in validated_data and field not in ['trailers','cast']:
+                setattr(instance, field, validated_data[field])
+        instance.save()
+
+        if 'trailers' in validated_data:
+            for trailer_data in validated_data['trailers']:
+                trailer, created = Trailers.objects.update_or_create(movie=instance, url=trailer_data['url'], defaults=trailer_data)
+                if not created:
+                    trailer.save()
+
+        if 'cast' in validated_data:
+            for cast_data in validated_data['cast']:
+                cast, created = Cast.objects.update_or_create(movie=instance, character=cast_data['character'], defaults=cast_data)
+                if not created:
+                    cast.save()
+
+        return instance
 
 class MovieListSerializer(serializers.ModelSerializer):
     class Meta:
