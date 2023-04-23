@@ -35,7 +35,7 @@ class MovieCollection(APIView):
             queryset = backend().filter_queryset(self.request, queryset, self)
         return queryset
 
-    def post(self, request: Request, *args, **kwargs) -> Response:
+    def post(self, request: Request) -> Response:
         serializer = MovieSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -66,7 +66,17 @@ class MovieDetail(APIView):
         except Movie.DoesNotExist:
             raise Http404('영화를 찾을 수 없습니다.')
     
-    def get(self, request, movie_id):
+    def get(self, request: Request, movie_id) -> Response: 
         movie = self.get_object(movie_id)
         serializer = MovieSerializer(movie)
         return Response(serializer.data)
+
+    def put(self, request, movie_id):
+        movie = self.get_object(movie_id)
+        serializer = MovieSerializer(movie, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'error' : '잘못된 요청입니다. 올바른 데이터를 전송해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
